@@ -52,6 +52,22 @@ own Solana RPC infrastructure. A stream provider is recommended for live
 production updates; the bundled stream adapter is LaserStream/Geyser-compatible,
 but `RPC_URL` itself is provider-neutral.
 
+### Helius free-tier note
+
+A free Helius key can be useful for local smoke tests, but it is not enough to
+certify this indexer as production-live. Current Helius docs list the free plan
+at 1M credits/month, 10 RPC requests/second, 5 `getProgramAccounts`/second,
+1 `sendTransaction`/second, standard LaserStream WebSocket methods, and no
+mainnet LaserStream gRPC. This indexer currently supports the
+LaserStream/Geyser-compatible stream path through `STREAM_ENDPOINT` and
+`STREAM_API_KEY`. If those are blank, raw table/SNG caches are seeded and
+periodically reseeded through RPC rather than fed by a live gRPC stream.
+
+That seeded mode can run for development, but it can lag. A frontend using a
+seeded/non-streaming indexer should treat delegated table account bytes as table
+discovery data, not authoritative live occupancy; the public frontend overlays
+delegated cash-table state from TEE before counting players online.
+
 ```bash
 npm ci
 cp .env.example .env

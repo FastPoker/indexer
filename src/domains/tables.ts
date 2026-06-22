@@ -42,6 +42,8 @@ export interface TableLite {
 
 const tablesByPda = new Map<string, TableLite>();
 let asOfMs = 0;
+let seedAsOfMs = 0;
+let streamAsOfMs = 0;
 let connection: Connection | null = null;
 let started = false;
 let intervalHandle: ReturnType<typeof setInterval> | null = null;
@@ -62,7 +64,8 @@ function applyUpdate(pubkey: string, owner: string, data: Buffer, lamports: numb
   const prev = tablesByPda.get(pubkey);
   if (prev && slot > 0 && slot < prev.slot) return; // slot-guard out-of-order events
   tablesByPda.set(pubkey, { pubkey, owner, dataB64: data.toString('base64'), lamports, slot });
-  asOfMs = Date.now();
+  streamAsOfMs = Date.now();
+  asOfMs = streamAsOfMs;
   // Note: broadcast omitted per-update to avoid flooding; lobby polls /v1/tables.
 }
 
@@ -95,7 +98,8 @@ async function seed(): Promise<void> {
       if (prev && prev.slot > 0) continue;
       tablesByPda.set(key, { pubkey: key, owner: e.owner, dataB64: e.data.toString('base64'), lamports: e.lamports, slot: 0 });
     }
-    asOfMs = Date.now();
+    seedAsOfMs = Date.now();
+    asOfMs = Math.max(seedAsOfMs, streamAsOfMs);
   } catch (err) {
     console.error('[tables] seed failed:', err instanceof Error ? err.message : err);
   }
@@ -109,8 +113,27 @@ export function tablesAsOfMs(): number {
   return asOfMs;
 }
 
-export function getAllTables(): { tables: TableLite[]; asOfMs: number } {
-  return { tables: Array.from(tablesByPda.values()), asOfMs };
+export function getTableCacheStatus(): {
+  asOfMs: number;
+  seedAsOfMs: number;
+  streamAsOfMs: number;
+  streamConfigured: boolean;
+  streamConnected: boolean;
+  tableCount: number;
+} {
+  const stream = getL1Stream();
+  return {
+    asOfMs,
+    seedAsOfMs,
+    streamAsOfMs,
+    streamConfigured: !!config.stream.endpoint && !!config.stream.apiKey,
+    streamConnected: stream?.isConnected() ?? false,
+    tableCount: tablesByPda.size,
+  };
+}
+
+export function getAllTables(): { tables: TableLite[] } & ReturnType<typeof getTableCacheStatus> {
+  return { tables: Array.from(tablesByPda.values()), ...getTableCacheStatus() };
 }
 
 export function startTablesCache(): void {

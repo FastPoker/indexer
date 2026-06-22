@@ -7,7 +7,7 @@ import { tables, hands, handReports, players, earnings, rakeLedger, tournaments,
 import { syncTableHandReports } from './hand-reports.ts';
 import { getSngPoolStates } from './domains/sng-pools.ts';
 import { getListedTokens } from './domains/token-registry.ts';
-import { getAllTables, getTable, tablesAsOfMs } from './domains/tables.ts';
+import { getAllTables, getTable, getTableCacheStatus, tablesAsOfMs } from './domains/tables.ts';
 import { getRecentReceipts, getReceiptByHand, getLeaderboard, getWalletJackpots } from './domains/jackpots.ts';
 import { getTableStats, isTableStatsStale } from './domains/table-stats.ts';
 
@@ -99,6 +99,7 @@ const routes: Array<{ method: string; match: RegExp; handler: Handler }> = [
           settledHandCount: handReportCount,
           playerCount,
           tournamentCount,
+          tableCache: getTableCacheStatus(),
         },
       };
     },

@@ -33,8 +33,11 @@ Do this:
    - curl http://localhost:3001/tables/live
    - curl http://localhost:3001/protocol-stats
 
-Do not use public/free Solana RPC. Do not add Docker or IPFS setup. Do not commit
-.env, node_modules, logs, local database files, key material, or generated output.
+Do not use public/free Solana RPC for production. A free Helius key may be used
+only for a local smoke test, and it does not provide the mainnet LaserStream gRPC
+stream this adapter expects through STREAM_ENDPOINT. Do not add Docker or IPFS
+setup. Do not commit .env, node_modules, logs, local database files, key material,
+or generated output.
 ```
 
 ## Human Checklist
@@ -64,6 +67,10 @@ STREAM_PROVIDER=laserstream
 STREAM_ENDPOINT=https://your-laserstream-geyser-endpoint.example
 STREAM_API_KEY=YOUR_STREAM_KEY
 ```
+
+If `STREAM_ENDPOINT` and `STREAM_API_KEY` are blank, the raw table/SNG caches run
+from seeded/polled RPC reads. That can work for development, but it can lag and
+should not be presented as production-live FULL mode.
 
 Validate and run:
 
