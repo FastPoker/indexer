@@ -39,13 +39,12 @@ function num(name: string, fallback: number): number {
 }
 
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY || '';
-const DEFAULT_RPC = HELIUS_API_KEY
-  ? `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`
-  : 'https://api.mainnet-beta.solana.com';
 // WebSocket endpoint derives from the RPC URL: swap https → wss.
 function deriveWsUrl(rpc: string): string {
   return rpc.replace(/^https?:\/\//, (m) => (m === 'https://' ? 'wss://' : 'ws://'));
 }
+
+const RPC_URL = required('RPC_URL');
 
 export const config = {
   mongo: {
@@ -54,12 +53,12 @@ export const config = {
     db: required('MONGO_DB', 'fastpoker_indexer'),
   },
   rpc: {
-    url: process.env.RPC_URL || DEFAULT_RPC,
-    wsUrl: process.env.RPC_WS_URL || deriveWsUrl(process.env.RPC_URL || DEFAULT_RPC),
+    url: RPC_URL,
+    wsUrl: process.env.RPC_WS_URL || deriveWsUrl(RPC_URL),
     heliusKey: HELIUS_API_KEY,
   },
   laserstream: {
-    endpoint: process.env.LASERSTREAM_ENDPOINT || (HELIUS_API_KEY ? 'https://laserstream-mainnet-ewr.helius-rpc.com' : ''),
+    endpoint: process.env.LASERSTREAM_ENDPOINT || '',
     apiKey: HELIUS_API_KEY,
   },
   program: {

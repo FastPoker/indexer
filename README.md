@@ -33,8 +33,14 @@ The result is a clean protocol read indexer, not a private frontend backend.
 
 ## Quick Start
 
-Prerequisites: Node 20+, MongoDB, and a Solana RPC. Helius LaserStream is recommended
-for live production updates.
+Prerequisites: Node 20+, MongoDB, and a paid/dedicated Solana RPC endpoint.
+
+Do not point this indexer at the public/free Solana RPC. It performs historical
+transaction backfills, account reads, WebSocket subscriptions, and safety reseeds;
+free endpoints will rate-limit, drop subscriptions, or return incomplete data.
+Use a keyed provider such as Helius, QuickNode, Triton, Alchemy, Syndica, or your
+own Solana RPC infrastructure. Helius LaserStream or an equivalent Geyser stream
+is recommended for live production updates.
 
 ```bash
 npm ci
@@ -52,16 +58,22 @@ Copy `.env.example` to `.env` and edit:
 ```bash
 MONGO_URI=mongodb://localhost:27017
 MONGO_DB=fastpoker_indexer
-RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_KEY
-RPC_WS_URL=wss://mainnet.helius-rpc.com/?api-key=YOUR_KEY
-HELIUS_API_KEY=YOUR_KEY
-LASERSTREAM_ENDPOINT=https://laserstream-mainnet-ewr.helius-rpc.com
+RPC_URL=
+RPC_WS_URL=
+HELIUS_API_KEY=
+LASERSTREAM_ENDPOINT=
 PROGRAM_ID=PokerXYdXL2SKNnfGbv1WE7vJHipTpNsfZbZeVvoJLn
 INDEXER_PORT=3001
 ```
 
+`RPC_URL` is required and intentionally blank in `.env.example`. Fill it with a
+paid/dedicated mainnet endpoint before running `npm run backfill` or `npm run start`.
+`RPC_WS_URL` can stay blank only if your provider's WebSocket URL is the same URL
+with `https://` changed to `wss://`; otherwise set the provider's explicit WS URL.
+
 `HELIUS_API_KEY` and `LASERSTREAM_ENDPOINT` are optional for local experiments, but
-without them the live stream is reduced and caches rely on slower safety reads.
+without a stream provider the live stream is reduced and caches rely on slower
+safety reads over your RPC quota.
 
 ## Commands
 
