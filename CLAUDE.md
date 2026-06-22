@@ -3,6 +3,8 @@
 This package is a source-code release of the FastPoker protocol read indexer.
 Keep it focused on chain-derived data and read APIs.
 
+MongoDB is required for this indexer. SQLite is not supported in this release.
+
 Do not add frontend-owned identity features, table-name mutation, XP, synced
 preferences, admin dashboards, incident repair scripts, or packaged backend
 instructions unless the user explicitly asks.

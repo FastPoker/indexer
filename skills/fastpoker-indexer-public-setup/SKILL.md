@@ -11,6 +11,8 @@ Treat this package as a source-code release of the protocol read indexer. Keep i
 separate from `Frontend`. Keep it focused on chain-derived indexed data
 and read APIs.
 
+MongoDB is required. SQLite is not supported in this release.
+
 Do not reintroduce frontend-owned identity features, table-name mutation, XP,
 synced preferences, admin dashboards, incident repair scripts, or packaged
 backend assumptions unless the user explicitly asks.
@@ -18,6 +20,7 @@ backend assumptions unless the user explicitly asks.
 Use these repo docs as source of truth:
 
 - `README.md` for setup, env, endpoint inventory, and source hygiene.
+- `AGENT_SETUP.md` for a copy-paste install runbook for coding agents.
 - `AGENTS.md` / `CLAUDE.md` for repo-local agent rules.
 
 ## Run From Source
@@ -58,6 +61,7 @@ as backward-compatible aliases; prefer `STREAM_*` for new setup.
 For `Frontend` node mode:
 
 ```bash
+NEXT_PUBLIC_ENABLE_INDEXER=true
 INDEXER_BASE_URL=http://localhost:3001
 NEXT_PUBLIC_INDEXER_WS_URL=ws://localhost:3001/ws
 ```

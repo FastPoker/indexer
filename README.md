@@ -9,7 +9,20 @@ This package is intentionally separate from `Frontend`. Users can run the
 client without this indexer. Users who want the FULL read experience can run this
 indexer as a normal Node process beside any frontend, script, or service they choose.
 
-## What This Keeps
+## Requirements
+
+- Node 20+.
+- MongoDB that you run locally or rent through a hosted service such as MongoDB
+  Atlas.
+- A paid/dedicated Solana mainnet RPC endpoint. Do not use public/free Solana
+  RPC for this indexer.
+- Optional for local testing, recommended for production: a stream provider. The
+  bundled adapter is LaserStream/Geyser-compatible, while `RPC_URL` itself is
+  provider-neutral.
+
+MongoDB is the only supported database in this release. SQLite is not supported.
+
+## What It Indexes
 
 - Program event backfill and live tail.
 - MongoDB collections for `tables`, `hands`, `hand_reports`, `players`, `earnings`,
@@ -20,20 +33,16 @@ indexer as a normal Node process beside any frontend, script, or service they ch
 - Table stats derived from indexed hand reports.
 - Read-only HTTP APIs and anonymous WebSocket topics.
 
-## What This Removes
+## What It Does Not Do
 
-- Frontend-owned table-name claims/renames.
-- Usernames, XP, synced preferences, and separate identity database wiring.
-- Wallet footer/earn-page snapshots.
-- Token-supply/yield-bar/pool-health convenience endpoints.
-- Admin dashboard and dealer-health aggregation endpoints.
-- Incident-specific repair scripts and fixture HTTP tests.
-
-The result is a clean protocol read indexer, not a private frontend backend.
+- It does not sign transactions or hold keys.
+- It does not replace the FastPoker frontend.
+- It does not provide user accounts, email login, profile preferences, or a
+  private identity database.
+- It does not run dealer/crank services.
+- It does not require Docker, IPFS, or a fixed process manager.
 
 ## Quick Start
-
-Prerequisites: Node 20+, MongoDB, and a paid/dedicated Solana RPC endpoint.
 
 Do not point this indexer at the public/free Solana RPC. It performs historical
 transaction backfills, account reads, WebSocket subscriptions, and safety reseeds;
@@ -46,11 +55,14 @@ but `RPC_URL` itself is provider-neutral.
 ```bash
 npm ci
 cp .env.example .env
-npm run backfill
+# edit .env: set MONGO_URI, RPC_URL, and any stream settings you use
 npm run start
 ```
 
-By default the server listens on `http://localhost:3001`.
+Start after MongoDB is reachable and `RPC_URL` is set to a paid/dedicated mainnet
+endpoint. By default the server listens on `http://localhost:3001`. Run
+`npm run backfill` when you want a historical catch-up pass before or after
+starting the live indexer.
 
 ## Configuration
 
@@ -157,6 +169,7 @@ WebSocket:
 For `Frontend` node mode:
 
 ```bash
+NEXT_PUBLIC_ENABLE_INDEXER=true
 INDEXER_BASE_URL=http://localhost:3001
 NEXT_PUBLIC_INDEXER_WS_URL=ws://localhost:3001/ws
 ```
@@ -164,6 +177,13 @@ NEXT_PUBLIC_INDEXER_WS_URL=ws://localhost:3001/ws
 For a public deployment, `NEXT_PUBLIC_INDEXER_WS_URL` must be reachable by the end
 user's browser, for example `wss://your-domain.example/ws`. Rebuild the client after
 changing `NEXT_PUBLIC_*` values.
+
+## Agent-Assisted Setup
+
+If you want Codex, Claude, or another coding agent to install and verify this
+package, point it at [AGENT_SETUP.md](./AGENT_SETUP.md). That file gives the agent
+the MongoDB/RPC requirements, exact env fields, validation commands, and frontend
+wiring.
 
 ## Validation
 

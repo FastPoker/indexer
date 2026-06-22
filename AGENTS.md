@@ -8,6 +8,9 @@ publish `Indexer`.
 - This is a source-code release of the protocol read indexer.
 - Keep it separate from `Frontend`.
 - Keep it focused on chain-derived indexed data and read APIs.
+- MongoDB is required. SQLite is not supported in this release.
+- Use `AGENT_SETUP.md` when a user wants a copy-paste install runbook for Codex,
+  Claude, or another coding agent.
 - Do not reintroduce frontend-owned identity features, table-name mutation, XP,
   preferences, admin dashboards, incident scripts, or packaged backend assumptions
   unless the user explicitly asks.
@@ -22,6 +25,9 @@ npm run start
 ```
 
 Server default: `http://localhost:3001`, WebSocket default: `/ws`.
+
+MongoDB is required. Point `MONGO_URI` at a local MongoDB instance or hosted
+MongoDB service before runtime validation.
 
 `RPC_URL` is required and provider-neutral. Do not imply Helius is mandatory.
 Live stream config is optional for local experiments; prefer `STREAM_PROVIDER`,
