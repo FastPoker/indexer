@@ -23,6 +23,11 @@ npm run start
 
 Server default: `http://localhost:3001`, WebSocket default: `/ws`.
 
+`RPC_URL` is required and provider-neutral. Do not imply Helius is mandatory.
+Live stream config is optional for local experiments; prefer `STREAM_PROVIDER`,
+`STREAM_ENDPOINT`, and `STREAM_API_KEY` in docs/examples. Legacy
+`LASERSTREAM_*`/`HELIUS_API_KEY` names are accepted only as aliases.
+
 ## Validate
 
 ```bash

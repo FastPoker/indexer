@@ -150,7 +150,7 @@ export function startSngPoolsCache(): void {
     stream.on('connected', () => { void seed(); });
     console.log(`[sng-pools] subscribed ${POOL_PDAS.length} pool PDAs via gRPC LaserStream`);
   } else {
-    console.log('[sng-pools] no stream; serving seeded snapshot only (set HELIUS_API_KEY/LASERSTREAM_ENDPOINT for live)');
+    console.log('[sng-pools] no stream; serving seeded snapshot only (set STREAM_API_KEY/STREAM_ENDPOINT for live)');
   }
   intervalHandle = setInterval(() => { void seed(); }, SAFETY_RESEED_MS);
 }

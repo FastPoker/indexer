@@ -1,5 +1,5 @@
 /**
- * LaserStream gRPC ingest for the indexer.
+ * L1 gRPC stream ingest for the indexer.
  *
  * Replaces polling for global account snapshots (POOL_PDA, POKER_MINT) and
  * per-wallet PDAs with push-based account subscriptions. Same proto/wire
@@ -7,8 +7,8 @@
  * indexer's needs: a flexible "watch this set of accounts" API that domain
  * modules can register against.
  *
- * Falls back gracefully: if HELIUS_API_KEY or LASERSTREAM_ENDPOINT are
- * unset, start() is a no-op and the domain modules continue to poll.
+ * Falls back gracefully: if STREAM_API_KEY or STREAM_ENDPOINT are unset,
+ * start() is a no-op and the domain modules continue to poll.
  *
  * Reconnects with exponential backoff. Dynamic subscription updates write
  * a fresh SubscribeRequest down the bidirectional stream so newly-watched
@@ -103,7 +103,7 @@ export class IndexerL1Stream extends EventEmitter {
   async start(): Promise<void> {
     if (this.alive) return;
     if (!this.apiKey || !this.endpoint) {
-      console.log('[l1-stream] disabled (no HELIUS_API_KEY or LASERSTREAM_ENDPOINT); domains fall back to polling');
+      console.log('[l1-stream] disabled (no STREAM_API_KEY or STREAM_ENDPOINT); domains fall back to polling');
       return;
     }
     this.alive = true;

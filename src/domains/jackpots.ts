@@ -236,7 +236,7 @@ export async function ingestJackpotReceipts(receipts: JackpotReceipt[]): Promise
         inserted++;
         ingestedJackpotReceipts.inc();
         // Push to WS fanout — every connected client gets the receipt in real
-        // time without paying a Helius `onLogs` WSS slot. Replaces the per-
+        // time without paying a per-client logs subscription. Replaces the per-
         // Clients may subscribe to this topic over the indexer WebSocket.
         try { publishTopic('jackpot_receipt', shapeForApi(doc)); } catch {}
       }

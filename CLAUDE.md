@@ -16,6 +16,11 @@ npm run backfill
 npm run start
 ```
 
+`RPC_URL` is required and provider-neutral. Live stream config is optional for
+local experiments; prefer `STREAM_PROVIDER`, `STREAM_ENDPOINT`, and
+`STREAM_API_KEY`. Legacy `LASERSTREAM_*`/`HELIUS_API_KEY` names are accepted only
+as aliases.
+
 ## Validate
 
 ```bash

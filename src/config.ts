@@ -38,7 +38,16 @@ function num(name: string, fallback: number): number {
   return n;
 }
 
-const HELIUS_API_KEY = process.env.HELIUS_API_KEY || '';
+const STREAM_API_KEY =
+  process.env.STREAM_API_KEY ||
+  process.env.LASERSTREAM_API_KEY ||
+  process.env.HELIUS_API_KEY ||
+  '';
+const STREAM_ENDPOINT =
+  process.env.STREAM_ENDPOINT ||
+  process.env.LASERSTREAM_ENDPOINT ||
+  '';
+const STREAM_PROVIDER = (process.env.STREAM_PROVIDER || (STREAM_ENDPOINT ? 'laserstream' : '')).toLowerCase();
 // WebSocket endpoint derives from the RPC URL: swap https → wss.
 function deriveWsUrl(rpc: string): string {
   return rpc.replace(/^https?:\/\//, (m) => (m === 'https://' ? 'wss://' : 'ws://'));
@@ -55,11 +64,16 @@ export const config = {
   rpc: {
     url: RPC_URL,
     wsUrl: process.env.RPC_WS_URL || deriveWsUrl(RPC_URL),
-    heliusKey: HELIUS_API_KEY,
   },
+  stream: {
+    provider: STREAM_PROVIDER,
+    endpoint: STREAM_ENDPOINT,
+    apiKey: STREAM_API_KEY,
+  },
+  // Backward-compatible alias for older local .env files.
   laserstream: {
-    endpoint: process.env.LASERSTREAM_ENDPOINT || '',
-    apiKey: HELIUS_API_KEY,
+    endpoint: STREAM_ENDPOINT,
+    apiKey: STREAM_API_KEY,
   },
   program: {
     id: required('PROGRAM_ID', 'PokerXYdXL2SKNnfGbv1WE7vJHipTpNsfZbZeVvoJLn'),

@@ -1,33 +1,23 @@
+import { Connection, PublicKey, type ConfirmedSignatureInfo } from '@solana/web3.js';
+
 /**
- * Helius `getTransactionsForAddress` JSON-RPC client.
+ * Program transaction-history iterator.
  *
- * Replaces the legacy `getSignaturesForAddress + per-tx getTransaction` loop:
- *   - Old: 1 credit (sig page) + N credits (one getTransaction per tx). 1000
- *     txs = ~1,001 credits, ~1,000 round-trips, throttled to avoid 429.
- *   - New: 10 credits per 100 returned (minimum 10). 1000 txs = 100 credits,
- *     ONE round-trip, no throttle. ~10× cheaper, dramatically faster wall-clock.
+ * Fast path: providers that support the enhanced `getTransactionsForAddress`
+ * JSON-RPC method can return full transaction pages in one request.
  *
- * The response is the standard Solana transaction object + meta (same shape as
- * `getTransaction`), so callers can keep their existing decoders. There is an
- * extra `transactionIndex` field; ignore if unused.
- *
- * Pagination via keyset cursor `paginationToken` of the form "slot:position".
- * The response includes `paginationToken` for the next page when more exists.
- *
- * Docs: https://www.helius.dev/docs/rpc/gettransactionsforaddress
+ * Portable path: standard Solana RPC providers use
+ * `getSignaturesForAddress` plus batched `getTransaction` calls. It costs more
+ * RPC quota and takes longer, but keeps `RPC_URL` provider-neutral.
  */
 
-export interface HeliusTransactionsParams {
+export interface TransactionHistoryParams {
   address: string;
-  /** "full" returns the entire tx object; "signatures" returns metadata only. */
   transactionDetails?: 'full' | 'signatures';
   sortOrder?: 'asc' | 'desc';
-  /** 1-1000, default 1000. */
   limit?: number;
-  /** Keyset cursor from a previous response's `paginationToken`. */
   paginationToken?: string;
   commitment?: 'confirmed' | 'finalized';
-  /** Pass 'jsonParsed' to mirror getParsedTransaction; 'json' for raw. */
   encoding?: 'json' | 'jsonParsed' | 'base64' | 'base58';
   filters?: {
     blockTime?: { gte?: number; lte?: number; gt?: number; lt?: number; eq?: number };
@@ -38,24 +28,22 @@ export interface HeliusTransactionsParams {
   };
 }
 
-export interface HeliusTransactionsResult {
-  transactions: any[]; // shape matches getTransaction response per item
+export interface TransactionHistoryResult {
+  transactions: any[];
   paginationToken: string | null;
 }
 
-/**
- * Issue one paginated call. Returns the page of txs plus the next-page token
- * (or null when the address history is exhausted).
- */
 export async function getTransactionsForAddress(
   rpcUrl: string,
-  params: HeliusTransactionsParams,
-): Promise<HeliusTransactionsResult> {
-  // Positional params per Helius docs: [address, options]. The first param is
-  // the bare address string; the second is an options object. Sending a single
-  // merged object yields `Invalid params: invalid type: map, expected a string`.
-  // NOTE: Helius caps `limit` at 100 when transactionDetails === 'full' and at
-  // 1000 when 'signatures'. We clamp accordingly so callers don't have to know.
+  params: TransactionHistoryParams,
+): Promise<TransactionHistoryResult> {
+  return getEnhancedTransactionsForAddress(rpcUrl, params);
+}
+
+async function getEnhancedTransactionsForAddress(
+  rpcUrl: string,
+  params: TransactionHistoryParams,
+): Promise<TransactionHistoryResult> {
   const txDetails = params.transactionDetails ?? 'full';
   const maxLimit = txDetails === 'full' ? 100 : 1000;
   const options: Record<string, unknown> = {
@@ -78,18 +66,16 @@ export async function getTransactionsForAddress(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) {
-    throw new Error(`getTransactionsForAddress HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`getTransactionsForAddress HTTP ${res.status}`);
+  const json = (await res.json()) as { result?: any; error?: { code?: number; message?: string } };
+  if (json.error) {
+    const msg = json.error.message || 'getTransactionsForAddress error';
+    throw new Error(`${msg}${json.error.code !== undefined ? ` (${json.error.code})` : ''}`);
   }
-  const json = (await res.json()) as { result?: any; error?: { message?: string } };
-  if (json.error) throw new Error(json.error.message || 'getTransactionsForAddress error');
   const result = json.result ?? {};
-  // Helius's response field name has varied across iterations. Accept any of
-  // the plausible shapes and log once on first-hit so we don't silently
-  // swallow a future schema change.
   const transactions: any[] = Array.isArray(result.transactions)
     ? result.transactions
-    : Array.isArray(result.data)        // current Helius shape: { result: { data: [...] } }
+    : Array.isArray(result.data)
       ? result.data
       : Array.isArray(result.items)
         ? result.items
@@ -101,45 +87,120 @@ export async function getTransactionsForAddress(
     typeof result.cursor === 'string' ? result.cursor :
     typeof result.nextCursor === 'string' ? result.nextCursor :
     null;
-  if (transactions.length === 0 && !_loggedEmptyShape) {
-    _loggedEmptyShape = true;
-    const preview = JSON.stringify(result).slice(0, 400);
-    console.warn('[helius-tx] empty result; raw shape preview:', preview);
-  }
   return { transactions, paginationToken };
 }
 
-let _loggedEmptyShape = false;
+function enhancedUnavailable(e: unknown): boolean {
+  const msg = e instanceof Error ? e.message.toLowerCase() : String(e).toLowerCase();
+  return msg.includes('method not found')
+    || msg.includes('-32601')
+    || msg.includes('unsupported')
+    || msg.includes('not supported')
+    || msg.includes('not implemented');
+}
 
-/**
- * Iterate over all transactions matching params, yielding pages one at a time.
- * Stops when the address is exhausted or `shouldStop(tx)` returns true for any
- * tx in a page (in which case that page is still yielded so the caller can
- * inspect the boundary tx). Pass `maxTxs` for a hard ceiling.
- */
+async function fetchTransactionsBatch(
+  rpcUrl: string,
+  sigs: ConfirmedSignatureInfo[],
+  commitment: 'confirmed' | 'finalized',
+): Promise<any[]> {
+  const out: any[] = [];
+  for (let i = 0; i < sigs.length; i += 100) {
+    const chunk = sigs.slice(i, i + 100);
+    const body = chunk.map((si, idx) => ({
+      jsonrpc: '2.0',
+      id: idx,
+      method: 'getTransaction',
+      params: [
+        si.signature,
+        { commitment, encoding: 'json', maxSupportedTransactionVersion: 0 },
+      ],
+    }));
+    const res = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`getTransaction batch HTTP ${res.status}`);
+    const json = await res.json() as any[];
+    for (let j = 0; j < chunk.length; j++) {
+      const tx = Array.isArray(json)
+        ? json.find((r: any) => r?.id === j)?.result ?? json[j]?.result
+        : null;
+      if (tx) out.push(tx);
+    }
+  }
+  return out;
+}
+
+async function* iterateStandardTransactionsForAddress(
+  rpcUrl: string,
+  params: TransactionHistoryParams,
+  opts?: { maxTxs?: number; shouldStop?: (tx: any) => boolean },
+): AsyncGenerator<any[], void, void> {
+  const conn = new Connection(rpcUrl, params.commitment ?? 'confirmed');
+  const address = new PublicKey(params.address);
+  const commitment = params.commitment ?? 'confirmed';
+  const pageSize = Math.min(Math.max(1, params.limit ?? 1000), 1000);
+  const blockTimeGte = params.filters?.blockTime?.gte;
+  let before: string | undefined;
+  let yielded = 0;
+  const cap = opts?.maxTxs ?? Infinity;
+
+  while (yielded < cap) {
+    const sigs = await conn.getSignaturesForAddress(
+      address,
+      { limit: Math.min(pageSize, cap - yielded), ...(before ? { before } : {}) },
+      commitment,
+    );
+    if (sigs.length === 0) return;
+    before = sigs[sigs.length - 1].signature;
+
+    const txs = await fetchTransactionsBatch(
+      rpcUrl,
+      sigs.filter((si) => !si.err),
+      commitment,
+    );
+    const filtered = typeof blockTimeGte === 'number'
+      ? txs.filter((tx) => typeof tx?.blockTime !== 'number' || tx.blockTime >= blockTimeGte)
+      : txs;
+    if (filtered.length > 0) {
+      yield filtered;
+      yielded += filtered.length;
+      if (opts?.shouldStop && filtered.some(opts.shouldStop)) return;
+    }
+    if (typeof blockTimeGte === 'number' && sigs.some((si) => typeof si.blockTime === 'number' && si.blockTime < blockTimeGte)) return;
+    if (sigs.length < pageSize) return;
+  }
+}
+
 export async function* iterateTransactionsForAddress(
   rpcUrl: string,
-  params: HeliusTransactionsParams,
+  params: TransactionHistoryParams,
   opts?: { maxTxs?: number; shouldStop?: (tx: any) => boolean },
 ): AsyncGenerator<any[], void, void> {
   let cursor: string | undefined = params.paginationToken;
   let yielded = 0;
   const cap = opts?.maxTxs ?? Infinity;
-  // Page size depends on transactionDetails mode — full mode is capped at 100
-  // by Helius; signatures mode supports 1000.
   const pageMax = (params.transactionDetails ?? 'full') === 'full' ? 100 : 1000;
-  while (yielded < cap) {
-    const limit = Math.min(pageMax, cap - yielded);
-    const page = await getTransactionsForAddress(rpcUrl, {
-      ...params,
-      limit,
-      paginationToken: cursor,
-    });
-    if (page.transactions.length === 0) return;
-    yield page.transactions;
-    yielded += page.transactions.length;
-    if (opts?.shouldStop && page.transactions.some(opts.shouldStop)) return;
-    if (!page.paginationToken) return;
-    cursor = page.paginationToken;
+
+  try {
+    while (yielded < cap) {
+      const page = await getEnhancedTransactionsForAddress(rpcUrl, {
+        ...params,
+        limit: Math.min(pageMax, cap - yielded),
+        paginationToken: cursor,
+      });
+      if (page.transactions.length === 0) return;
+      yield page.transactions;
+      yielded += page.transactions.length;
+      if (opts?.shouldStop && page.transactions.some(opts.shouldStop)) return;
+      if (!page.paginationToken) return;
+      cursor = page.paginationToken;
+    }
+  } catch (e) {
+    if (!enhancedUnavailable(e) || yielded > 0) throw e;
+    console.warn('[tx-history] enhanced getTransactionsForAddress unavailable; falling back to standard Solana RPC history');
+    yield* iterateStandardTransactionsForAddress(rpcUrl, params, opts);
   }
 }

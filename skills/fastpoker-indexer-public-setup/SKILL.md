@@ -1,6 +1,6 @@
 ---
 name: fastpoker-Indexer-setup
-description: Run, verify, publish, or troubleshoot the FastPoker standalone source-code indexer. Use when an agent is asked to set up the indexer repo, wire MongoDB/RPC/LaserStream, explain the read API, connect it to Frontend, validate a source release, or keep the indexer stripped to chain-derived data only.
+description: Run, verify, publish, or troubleshoot the FastPoker standalone source-code indexer. Use when an agent is asked to set up the indexer repo, wire MongoDB/RPC/streaming, explain the read API, connect it to Frontend, validate a source release, or keep the indexer stripped to chain-derived data only.
 ---
 
 # FastPoker Indexer Standalone Setup
@@ -39,16 +39,19 @@ Set these in `.env`:
 ```bash
 MONGO_URI=mongodb://localhost:27017
 MONGO_DB=fastpoker_indexer
-RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_KEY
-RPC_WS_URL=wss://mainnet.helius-rpc.com/?api-key=YOUR_KEY
-HELIUS_API_KEY=YOUR_KEY
-LASERSTREAM_ENDPOINT=https://laserstream-mainnet-ewr.helius-rpc.com
+RPC_URL=https://your-dedicated-mainnet-rpc.example
+RPC_WS_URL=wss://your-dedicated-mainnet-rpc-websocket.example
+STREAM_PROVIDER=laserstream
+STREAM_ENDPOINT=https://your-laserstream-geyser-endpoint.example
+STREAM_API_KEY=YOUR_STREAM_KEY
 PROGRAM_ID=PokerXYdXL2SKNnfGbv1WE7vJHipTpNsfZbZeVvoJLn
 INDEXER_PORT=3001
 ```
 
-LaserStream is optional for local experiments, but production-quality live updates
-need it.
+The bundled stream adapter is LaserStream/Geyser-compatible. Stream config is
+optional for local experiments, but production-quality live updates need it.
+`LASERSTREAM_ENDPOINT`, `LASERSTREAM_API_KEY`, and `HELIUS_API_KEY` are accepted
+as backward-compatible aliases; prefer `STREAM_*` for new setup.
 
 ## Client Wiring
 

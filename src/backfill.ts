@@ -14,11 +14,9 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
  * Walk program TX history backward to the lookback cutoff or the last indexed
  * signature, whichever comes first.
  *
- * Was: getSignaturesForAddress page (1 credit) + per-sig getTransaction (1 credit
- * each, serial, 100ms throttle). 1000 txs = ~1,001 credits + 1,001 round-trips.
- *
- * Now: Helius getTransactionsForAddress in full mode. 1000 txs = 100 credits,
- * ONE round-trip per page. ~10× cheaper, ~100× faster wall-clock on backfill.
+ * Uses an enhanced getTransactionsForAddress fast path when the configured RPC
+ * provider supports it. Otherwise falls back to standard Solana RPC history:
+ * getSignaturesForAddress pages plus batched getTransaction requests.
  *
  * The throttle is preserved as a tiny inter-page sleep so we don't pin the
  * upstream during long catch-ups. JPV1 jackpot ingest is folded in here so the

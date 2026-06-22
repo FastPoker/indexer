@@ -39,8 +39,9 @@ Do not point this indexer at the public/free Solana RPC. It performs historical
 transaction backfills, account reads, WebSocket subscriptions, and safety reseeds;
 free endpoints will rate-limit, drop subscriptions, or return incomplete data.
 Use a keyed provider such as Helius, QuickNode, Triton, Alchemy, Syndica, or your
-own Solana RPC infrastructure. Helius LaserStream or an equivalent Geyser stream
-is recommended for live production updates.
+own Solana RPC infrastructure. A stream provider is recommended for live
+production updates; the bundled stream adapter is LaserStream/Geyser-compatible,
+but `RPC_URL` itself is provider-neutral.
 
 ```bash
 npm ci
@@ -60,8 +61,9 @@ MONGO_URI=mongodb://localhost:27017
 MONGO_DB=fastpoker_indexer
 RPC_URL=
 RPC_WS_URL=
-HELIUS_API_KEY=
-LASERSTREAM_ENDPOINT=
+STREAM_PROVIDER=laserstream
+STREAM_ENDPOINT=
+STREAM_API_KEY=
 PROGRAM_ID=PokerXYdXL2SKNnfGbv1WE7vJHipTpNsfZbZeVvoJLn
 INDEXER_PORT=3001
 ```
@@ -71,9 +73,17 @@ paid/dedicated mainnet endpoint before running `npm run backfill` or `npm run st
 `RPC_WS_URL` can stay blank only if your provider's WebSocket URL is the same URL
 with `https://` changed to `wss://`; otherwise set the provider's explicit WS URL.
 
-`HELIUS_API_KEY` and `LASERSTREAM_ENDPOINT` are optional for local experiments, but
-without a stream provider the live stream is reduced and caches rely on slower
-safety reads over your RPC quota.
+`STREAM_PROVIDER=laserstream`, `STREAM_ENDPOINT`, and `STREAM_API_KEY` enable the
+bundled LaserStream/Geyser-compatible account stream. They are optional for local
+experiments, but without a stream provider the live stream is reduced and caches
+rely on slower safety reads over your RPC quota. `LASERSTREAM_ENDPOINT`,
+`LASERSTREAM_API_KEY`, and `HELIUS_API_KEY` remain accepted as backward-compatible
+aliases, but new deployments should prefer the `STREAM_*` names.
+
+Historical backfill uses an enhanced `getTransactionsForAddress` fast path when
+your RPC provider supports it. Otherwise it falls back to standard Solana
+`getSignaturesForAddress` plus batched `getTransaction`, which is slower and uses
+more quota but is not provider-specific.
 
 ## Commands
 

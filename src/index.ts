@@ -31,13 +31,12 @@ async function main(): Promise<void> {
   const stopWs = attachWsGateway(httpServer);
 
   // Push-based ingest for global account snapshots. The L1Stream singleton
-  // owns one gRPC subscription to Helius LaserStream; domain modules register
-  // the accounts they care about via stream.watch() inside their start* funcs.
-  // If HELIUS_API_KEY or LASERSTREAM_ENDPOINT is unset, the stream is inert
-  // and domains fall back to their safety-net polls.
+  // owns one gRPC subscription when STREAM_PROVIDER=laserstream; domain modules
+  // register the accounts they care about via stream.watch() inside their
+  // start* funcs. If stream config is unset, domains fall back to safety polls.
   const l1Stream = initL1Stream({
-    apiKey: config.laserstream.apiKey,
-    endpoint: config.laserstream.endpoint,
+    apiKey: config.stream.apiKey,
+    endpoint: config.stream.endpoint,
   });
   void l1Stream.start();
 
