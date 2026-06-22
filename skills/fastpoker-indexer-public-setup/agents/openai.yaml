@@ -1,0 +1,4 @@
+interface:
+  display_name: "FastPoker Indexer Standalone Setup"
+  short_description: "Run and publish the FastPoker standalone source indexer."
+  default_prompt: "Help me run or publish this FastPoker standalone indexer from source."
