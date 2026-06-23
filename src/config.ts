@@ -48,6 +48,10 @@ const STREAM_ENDPOINT =
   process.env.LASERSTREAM_ENDPOINT ||
   '';
 const STREAM_PROVIDER = (process.env.STREAM_PROVIDER || (STREAM_ENDPOINT ? 'laserstream' : '')).toLowerCase();
+const STREAM_ENABLED = !!STREAM_ENDPOINT && !!STREAM_API_KEY;
+if (STREAM_ENABLED && STREAM_PROVIDER !== 'laserstream') {
+  throw new Error(`Unsupported STREAM_PROVIDER: ${STREAM_PROVIDER || '(blank)'}. Supported provider: laserstream`);
+}
 // WebSocket endpoint derives from the RPC URL: swap https → wss.
 function deriveWsUrl(rpc: string): string {
   return rpc.replace(/^https?:\/\//, (m) => (m === 'https://' ? 'wss://' : 'ws://'));
@@ -69,6 +73,7 @@ export const config = {
     provider: STREAM_PROVIDER,
     endpoint: STREAM_ENDPOINT,
     apiKey: STREAM_API_KEY,
+    enabled: STREAM_ENABLED,
   },
   // Backward-compatible alias for older local .env files.
   laserstream: {

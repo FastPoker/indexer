@@ -51,8 +51,8 @@ PROGRAM_ID=PokerXYdXL2SKNnfGbv1WE7vJHipTpNsfZbZeVvoJLn
 INDEXER_PORT=3001
 ```
 
-The bundled stream adapter is LaserStream/Geyser-compatible. Stream config is
-optional for local experiments, but production-quality live updates need it.
+The bundled stream adapter is LaserStream/Geyser-compatible. Stream config may be
+blank only for local experiments; production FULL/live updates require it.
 `LASERSTREAM_ENDPOINT`, `LASERSTREAM_API_KEY`, and `HELIUS_API_KEY` are accepted
 as backward-compatible aliases; prefer `STREAM_*` for new setup.
 

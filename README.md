@@ -68,13 +68,11 @@ data.
 ### Helius free-tier note
 
 A free Helius key can be useful for local smoke tests, but it is not enough to
-certify this indexer as production-live. Current Helius docs list the free plan
-at 1M credits/month, 10 RPC requests/second, 5 `getProgramAccounts`/second,
-1 `sendTransaction`/second, standard LaserStream WebSocket methods, and no
-mainnet LaserStream gRPC. This indexer currently supports the
-LaserStream/Geyser-compatible stream path through `STREAM_ENDPOINT` and
-`STREAM_API_KEY`. If those are blank, raw table/SNG caches are seeded and
-periodically reseeded through RPC rather than fed by a live gRPC stream.
+certify this indexer as production-live. Provider limits and plan names change,
+so verify your provider's current plan before launch. This indexer requires a
+LaserStream/Geyser-compatible stream endpoint plus API key for production
+FULL/live mode. If those are blank, raw table/SNG caches are seeded and
+periodically reseeded through RPC rather than fed by a live stream.
 
 That seeded mode can run for development, but it can lag. A frontend using a
 seeded/non-streaming indexer should treat delegated table account bytes as table

@@ -30,15 +30,21 @@ async function main(): Promise<void> {
   const httpServer = startServer();
   const stopWs = attachWsGateway(httpServer);
 
-  // Push-based ingest for global account snapshots. The L1Stream singleton
-  // owns one gRPC subscription when STREAM_PROVIDER=laserstream; domain modules
-  // register the accounts they care about via stream.watch() inside their
-  // start* funcs. If stream config is unset, domains fall back to safety polls.
-  const l1Stream = initL1Stream({
-    apiKey: config.stream.apiKey,
-    endpoint: config.stream.endpoint,
-  });
-  void l1Stream.start();
+  // Push-based ingest for global account snapshots. The L1Stream singleton is
+  // created only when stream credentials are complete; otherwise domain caches
+  // log and run seeded/polled mode.
+  const l1Stream = config.stream.enabled
+    ? initL1Stream({
+        apiKey: config.stream.apiKey,
+        endpoint: config.stream.endpoint,
+      })
+    : null;
+  if (l1Stream) {
+    console.log(`[indexer] Stream:  ${config.stream.provider} (${config.stream.endpoint})`);
+    void l1Stream.start();
+  } else {
+    console.log('[indexer] Stream:  disabled; seeded/polled caches only');
+  }
 
   // Live protocol account caches: SNG pools, listed-token registry, and table
   // accounts. They reduce repeated RPC scans but remain read-only indexes.
@@ -86,7 +92,7 @@ async function main(): Promise<void> {
     try { stopTablesCache(); } catch {}
     try { stopTableStatsLoop(); } catch {}
     try { stopHandReportCrawlerLoop(); } catch {}
-    try { l1Stream.stop(); } catch {}
+    try { l1Stream?.stop(); } catch {}
     try { await closeDb(); } catch {}
     process.exit(0);
   };

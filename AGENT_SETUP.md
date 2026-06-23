@@ -34,10 +34,10 @@ Do this:
    - curl http://localhost:3001/protocol-stats
 
 Do not use public/free Solana RPC for production. A free Helius key may be used
-only for a local smoke test, and it does not provide the mainnet LaserStream gRPC
-stream this adapter expects through STREAM_ENDPOINT. Do not add Docker or IPFS
-setup. Do not commit .env, node_modules, logs, local database files, key material,
-or generated output.
+only for a local smoke test. Provider limits and plan names change; production
+FULL/live indexing requires paid/dedicated RPC and a LaserStream/Geyser-compatible
+stream endpoint plus API key. Do not add Docker or IPFS setup. Do not commit .env,
+node_modules, logs, local database files, key material, or generated output.
 ```
 
 ## Human Checklist
