@@ -9,6 +9,14 @@ This package is intentionally separate from `Frontend`. Users can run the
 client without this indexer. Users who want the FULL read experience can run this
 indexer as a normal Node process beside any frontend, script, or service they choose.
 
+> [!WARNING]
+> **Beta software. Use at your own risk.**
+>
+> Fast Poker is still in Beta and the protocol is considered highly
+> experimental. The Dealer Service, frontend, and indexer can break, behave
+> unexpectedly, or lose funds. Run any of it at your own risk. Do not commit
+> funds, keys, or infrastructure you are not prepared to lose.
+
 ## Requirements
 
 - Node 20+.
