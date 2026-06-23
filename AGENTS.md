@@ -30,9 +30,10 @@ MongoDB is required. Point `MONGO_URI` at a local MongoDB instance or hosted
 MongoDB service before runtime validation.
 
 `RPC_URL` is required and provider-neutral. Do not imply Helius is mandatory.
-Live stream config is optional for local experiments; prefer `STREAM_PROVIDER`,
-`STREAM_ENDPOINT`, and `STREAM_API_KEY` in docs/examples. Legacy
-`LASERSTREAM_*`/`HELIUS_API_KEY` names are accepted only as aliases.
+Live stream config is required for production FULL/live indexing and optional
+only for local smoke tests; prefer `STREAM_PROVIDER`, `STREAM_ENDPOINT`, and
+`STREAM_API_KEY` in docs/examples. Legacy `LASERSTREAM_*`/`HELIUS_API_KEY` names
+are accepted only as aliases.
 
 ## Validate
 

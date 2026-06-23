@@ -23,7 +23,7 @@ Do this:
    - MONGO_DB
    - RPC_URL using a paid/dedicated Solana mainnet RPC
    - RPC_WS_URL if my provider has a separate websocket URL
-   - STREAM_PROVIDER, STREAM_ENDPOINT, STREAM_API_KEY if I have a stream provider
+   - STREAM_PROVIDER, STREAM_ENDPOINT, STREAM_API_KEY for production FULL/live mode
    - PROGRAM_ID
    - INDEXER_PORT
 6. Run npm run typecheck.
@@ -60,7 +60,7 @@ PROGRAM_ID=PokerXYdXL2SKNnfGbv1WE7vJHipTpNsfZbZeVvoJLn
 INDEXER_PORT=3001
 ```
 
-Optional, recommended for production live updates:
+Required for production FULL/live indexing:
 
 ```bash
 STREAM_PROVIDER=laserstream
@@ -69,8 +69,8 @@ STREAM_API_KEY=YOUR_STREAM_KEY
 ```
 
 If `STREAM_ENDPOINT` and `STREAM_API_KEY` are blank, the raw table/SNG caches run
-from seeded/polled RPC reads. That can work for development, but it can lag and
-should not be presented as production-live FULL mode.
+from seeded/polled RPC reads. That can work only for local development or smoke
+tests; it can lag and should not be presented as production-live FULL mode.
 
 Validate and run:
 

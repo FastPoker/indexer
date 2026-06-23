@@ -16,9 +16,9 @@ indexer as a normal Node process beside any frontend, script, or service they ch
   Atlas.
 - A paid/dedicated Solana mainnet RPC endpoint. Do not use public/free Solana
   RPC for this indexer.
-- Optional for local testing, recommended for production: a stream provider. The
-  bundled adapter is LaserStream/Geyser-compatible, while `RPC_URL` itself is
-  provider-neutral.
+- Stream provider for production FULL/live indexing. The bundled adapter is
+  LaserStream/Geyser-compatible, while `RPC_URL` itself is provider-neutral.
+  Leaving stream config blank is for local smoke tests only.
 
 MongoDB is the only supported database in this release. SQLite is not supported.
 
@@ -48,9 +48,22 @@ Do not point this indexer at the public/free Solana RPC. It performs historical
 transaction backfills, account reads, WebSocket subscriptions, and safety reseeds;
 free endpoints will rate-limit, drop subscriptions, or return incomplete data.
 Use a keyed provider such as Helius, QuickNode, Triton, Alchemy, Syndica, or your
-own Solana RPC infrastructure. A stream provider is recommended for live
-production updates; the bundled stream adapter is LaserStream/Geyser-compatible,
+own Solana RPC infrastructure. A stream provider is required for production
+FULL/live indexer mode; the bundled stream adapter is LaserStream/Geyser-compatible,
 but `RPC_URL` itself is provider-neutral.
+
+### Streaming requirement
+
+For production FULL mode, run this indexer with both:
+
+- `RPC_URL` / `RPC_WS_URL` for history, account reads, backfill, repair, and
+  safety reseeds.
+- `STREAM_PROVIDER`, `STREAM_ENDPOINT`, and `STREAM_API_KEY` for live account
+  updates.
+
+The indexer can start without stream settings for local development, but that is
+seeded/polled mode. It is not production-live and can show stale table/SNG cache
+data.
 
 ### Helius free-tier note
 
@@ -71,7 +84,7 @@ delegated cash-table state from TEE before counting players online.
 ```bash
 npm ci
 cp .env.example .env
-# edit .env: set MONGO_URI, RPC_URL, and any stream settings you use
+# edit .env: set MONGO_URI, RPC_URL, and STREAM_* for production FULL mode
 npm run start
 ```
 
@@ -102,11 +115,12 @@ paid/dedicated mainnet endpoint before running `npm run backfill` or `npm run st
 with `https://` changed to `wss://`; otherwise set the provider's explicit WS URL.
 
 `STREAM_PROVIDER=laserstream`, `STREAM_ENDPOINT`, and `STREAM_API_KEY` enable the
-bundled LaserStream/Geyser-compatible account stream. They are optional for local
-experiments, but without a stream provider the live stream is reduced and caches
-rely on slower safety reads over your RPC quota. `LASERSTREAM_ENDPOINT`,
-`LASERSTREAM_API_KEY`, and `HELIUS_API_KEY` remain accepted as backward-compatible
-aliases, but new deployments should prefer the `STREAM_*` names.
+bundled LaserStream/Geyser-compatible account stream. They are required for
+production FULL/live indexing. They may be left blank only for local smoke tests,
+where caches rely on slower safety reads over your RPC quota and can lag.
+`LASERSTREAM_ENDPOINT`, `LASERSTREAM_API_KEY`, and `HELIUS_API_KEY` remain accepted
+as backward-compatible aliases, but new deployments should prefer the `STREAM_*`
+names.
 
 Historical backfill uses an enhanced `getTransactionsForAddress` fast path when
 your RPC provider supports it. Otherwise it falls back to standard Solana
