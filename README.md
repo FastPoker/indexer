@@ -35,7 +35,7 @@ MongoDB is the only supported database in this release. SQLite is not supported.
 - Program event backfill and live tail.
 - MongoDB collections for `tables`, `hands`, `hand_reports`, `players`, `earnings`,
   `rake_ledger`, `tournaments`, `jackpot_receipts`, and cursor state.
-- HRV1 hand-report chunk reconstruction.
+- HRV1 hand-report chunk reconstruction, including SNG Duel records.
 - JPV1 jackpot receipt ingestion.
 - SNG pool, listed-token, and raw table-account read caches.
 - Table stats derived from indexed hand reports.

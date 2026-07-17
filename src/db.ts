@@ -108,6 +108,23 @@ export interface HandActionEvent {
   wallet: string;
   operator: string;
   aux: number;
+  duel?: {
+    stage: number;
+    round: number;
+    seatA: number;
+    seatB: number;
+    choiceA: number;
+    choiceB: number;
+    winner: number;
+    loser: number;
+    flags: number;
+    blindLevel: number;
+    aChips: number;
+    bChips: number;
+    board: string[];
+    aHole: string[];
+    bHole: string[];
+  };
 }
 
 export interface ParsedHandRecord {

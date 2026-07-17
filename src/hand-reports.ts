@@ -179,6 +179,45 @@ function parseHandReportPayload(payload: Buffer, meta: NonNullable<ParsedHandRec
       continue;
     }
 
+    if (kind === 10) {
+      if (offset + 128 > payload.length) break;
+      const e = payload.subarray(offset, offset + 128);
+      const boardBytes = Array.from(e.subarray(44, 49));
+      const aHoleBytes = Array.from(e.subarray(49, 51));
+      const bHoleBytes = Array.from(e.subarray(51, 53));
+      actions.push({
+        kind: e[0],
+        street: e[2],
+        actor: e[3],
+        action: e[1],
+        handNumber: Number(e.readBigUInt64LE(4)),
+        amount: Number(e.readBigUInt64LE(20)),
+        pot: 0,
+        wallet: new PublicKey(e.subarray(53, 85)).toBase58(),
+        operator: new PublicKey(e.subarray(85, 117)).toBase58(),
+        aux: e.readUInt32LE(117),
+        duel: {
+          stage: e[1],
+          round: e[2],
+          seatA: e[12],
+          seatB: e[13],
+          choiceA: e[14],
+          choiceB: e[15],
+          winner: e[16],
+          loser: e[17],
+          flags: e[18],
+          blindLevel: e[19],
+          aChips: Number(e.readBigUInt64LE(28)),
+          bChips: Number(e.readBigUInt64LE(36)),
+          board: boardBytes.filter(c => c !== 255 && c <= 51).map(cardLabel),
+          aHole: aHoleBytes.filter(c => c !== 255 && c <= 51).map(cardLabel),
+          bHole: bHoleBytes.filter(c => c !== 255 && c <= 51).map(cardLabel),
+        },
+      });
+      offset += 128;
+      continue;
+    }
+
     if (offset + 96 > payload.length) break;
     const e = payload.subarray(offset, offset + 96);
     actions.push({
